@@ -1,0 +1,1490 @@
+/*
+ * Kindred — plain CSS port of the design tokens + component styles.
+ *
+ * Tokens (from src/styles/tokens.css) live in :root. Component styles from the
+ * former CSS Modules are flattened into prefixed .kd-* class names so the
+ * stage-2 vanilla renderers can build every screen. Palette: violet primary,
+ * rose accent, green confirmation. Mobile-first 480px centered shell with a
+ * sticky bottom nav.
+ */
+
+:root {
+  /* ----- Primary: violet / purple (Discover, Pairs, Schedule) ----- */
+  --color-primary: #7c5cff;
+  --color-primary-strong: #6a48f0;
+  --color-primary-soft: #efeaff;
+  --color-primary-contrast: #ffffff;
+
+  /* ----- Secondary accent: rose / pink (medium tags, highlights) ----- */
+  --color-accent: #e0559a;
+  --color-accent-soft: #fbe6f1;
+  --color-accent-contrast: #ffffff;
+
+  /* ----- Confirmation accent: green-forward (Workshop Pass) ----- */
+  --color-success: #1f6f52;
+  --color-success-strong: #17593f;
+  --color-success-soft: #e4f0ea;
+  --color-success-contrast: #ffffff;
+
+  /* ----- Privacy / warning accent: coral-orange ----- */
+  --color-warning: #f2743a;
+  --color-warning-soft: #fdeadf;
+
+  /* ----- Backgrounds & surfaces ----- */
+  --color-background: #f7f5fb;
+  --color-background-alt: #f4f7f2;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f2eefc;
+  --color-overlay: rgba(30, 22, 54, 0.45);
+
+  /* ----- Text ----- */
+  --color-text: #211b34;
+  --color-text-muted: #6b6580;
+  --color-text-subtle: #9a95ab;
+  --color-text-on-primary: #ffffff;
+
+  /* ----- Borders & dividers ----- */
+  --color-border: #e7e2f2;
+  --color-border-strong: #d6cfea;
+
+  /* ----- Radius (rounded cards & pills) ----- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* ----- Spacing scale ----- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* ----- Shadows ----- */
+  --shadow-sm: 0 1px 2px rgba(33, 27, 52, 0.06);
+  --shadow-md: 0 6px 18px rgba(33, 27, 52, 0.08);
+  --shadow-lg: 0 14px 40px rgba(33, 27, 52, 0.12);
+
+  /* ----- Typography ----- */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 26px;
+  --font-size-2xl: 32px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================================================================
+ * App shell (former App.module.css)
+ * ========================================================================= */
+
+.kd-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--color-background);
+  box-shadow: var(--shadow-md);
+}
+
+.kd-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ----- AJAX loading + error states ----- */
+
+.kd-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-5);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.kd-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+  color: var(--color-warning);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.kd-hidden {
+  display: none !important;
+}
+
+/* =========================================================================
+ * App header (role selector)
+ * ========================================================================= */
+
+.kd-app-header {
+  position: sticky;
+  top: 0;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Keep the (longer) demo-user dropdown from overflowing the narrow shell. */
+#user-select {
+  max-width: 62%;
+  text-overflow: ellipsis;
+}
+
+.kd-role-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: var(--space-2) var(--space-6) var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface);
+  /* chevron */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236a48f0' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.kd-role-select:hover:not(:disabled) {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text);
+}
+
+.kd-role-select:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+  border-color: var(--color-primary);
+}
+
+.kd-role-select:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* =========================================================================
+ * BottomNav (former BottomNav.module.css)
+ * ========================================================================= */
+
+.kd-bottom-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.kd-nav-entry {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.kd-nav-entry:hover {
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
+}
+
+.kd-nav-icon {
+  display: block;
+}
+
+.kd-nav-label {
+  line-height: 1;
+}
+
+.kd-nav-entry--active {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.kd-nav-entry--active:hover {
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+}
+
+.kd-nav-entry--active::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+}
+
+.kd-nav-entry:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+.kd-nav-entry--locked {
+  color: var(--color-text-subtle);
+}
+
+.kd-nav-entry--locked:hover {
+  color: var(--color-text-muted);
+}
+
+.kd-nav-lock {
+  margin-left: var(--space-1);
+  vertical-align: middle;
+}
+
+/* =========================================================================
+ * DiscoverScreen (former DiscoverScreen.module.css)
+ * ========================================================================= */
+
+.kd-discover {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-5);
+  background: var(--color-background);
+}
+
+.kd-location-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.kd-screen-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.kd-location {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.kd-search-bar {
+  display: flex;
+  flex-direction: column;
+}
+
+.kd-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.kd-search-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.kd-search-input::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.kd-search-input:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+  border-color: var(--color-primary);
+}
+
+.kd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.kd-chip {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.kd-chip:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+}
+
+.kd-chip--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.kd-chip--active:hover {
+  background: var(--color-primary-strong);
+  border-color: var(--color-primary-strong);
+  color: var(--color-primary-contrast);
+}
+
+.kd-chip:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+.kd-result-count {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.kd-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.kd-empty-inline {
+  margin: 0;
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+/* =========================================================================
+ * WorkshopCard (former WorkshopCard.module.css)
+ * ========================================================================= */
+
+.kd-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-md);
+}
+
+.kd-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.kd-medium-tag {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+.kd-price {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+/* Discounted variation (A/B experiment: promotionalPricing). A "% off" badge,
+ * the inflated original struck through, and the real price in the accent
+ * color. The charged amount is unchanged — only the framing differs. */
+.kd-price--discounted {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.kd-discount-badge {
+  align-self: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-success-soft);
+  color: var(--color-success-strong);
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.kd-price-original {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-subtle);
+  text-decoration: line-through;
+}
+
+.kd-price-current {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
+}
+
+.kd-card-title {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.kd-card-studio {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.kd-card-location,
+.kd-card-datetime {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.kd-spots-left {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-warning);
+}
+
+.kd-card-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.kd-upgrade-slot {
+  flex: 1 1 0;
+  display: flex;
+}
+
+.kd-btn-primary,
+.kd-btn-secondary {
+  flex: 1 1 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.kd-btn-primary {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.kd-btn-primary:hover {
+  background: var(--color-primary-strong);
+  border-color: var(--color-primary-strong);
+}
+
+.kd-btn-secondary {
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+}
+
+.kd-btn-secondary:hover {
+  background: var(--color-primary-soft);
+}
+
+.kd-btn-primary:focus-visible,
+.kd-btn-secondary:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+ * PairsScreen (former PairsScreen.module.css)
+ * ========================================================================= */
+
+.kd-pairs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-5);
+  background: var(--color-background);
+}
+
+.kd-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.kd-heading {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.kd-workshop-header {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.kd-upgrade-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.kd-upgrade-body {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.kd-interested-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kd-interested-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.kd-interested-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.kd-interested-studio {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.kd-empty-hint {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-subtle);
+}
+
+.kd-privacy-note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.kd-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* =========================================================================
+ * NeighborCard (former NeighborCard.module.css)
+ * ========================================================================= */
+
+.kd-neighbor-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-md);
+}
+
+.kd-neighbor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.kd-match {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.kd-distance {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.kd-bio {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.kd-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kd-tag {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.kd-neighbor-actions {
+  display: flex;
+  margin-top: var(--space-3);
+}
+
+.kd-neighbor-action {
+  flex: 1 1 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.kd-neighbor-action:hover {
+  background: var(--color-primary-strong);
+  border-color: var(--color-primary-strong);
+}
+
+.kd-neighbor-action:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+.kd-neighbor-action--sent {
+  flex: 1 1 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: default;
+}
+
+.kd-neighbor-action--sent:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+ * PairingRequestCard (former PairingRequestCard.module.css)
+ * ========================================================================= */
+
+.kd-request-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.kd-request-requester {
+  margin-bottom: var(--space-1);
+}
+
+.kd-request-workshop {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.kd-request-message {
+  margin: 0;
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.kd-request-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.kd-request-primary,
+.kd-request-secondary {
+  flex: 1 1 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.kd-request-primary {
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.kd-request-primary:hover {
+  background: #cf4589;
+  border-color: #cf4589;
+}
+
+.kd-request-secondary {
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.kd-request-secondary:hover {
+  background: var(--color-surface-muted);
+}
+
+.kd-request-primary:focus-visible,
+.kd-request-secondary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+ * IdentityView (former IdentityView.module.css)
+ * ========================================================================= */
+
+.kd-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.kd-avatar,
+.kd-placeholder {
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--color-surface-muted);
+}
+
+.kd-avatar {
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+.kd-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-subtle);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-border);
+}
+
+.kd-glyph {
+  width: 60%;
+  height: 60%;
+  display: block;
+}
+
+.kd-identity-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.kd-identity--md .kd-avatar,
+.kd-identity--md .kd-placeholder {
+  width: 48px;
+  height: 48px;
+}
+
+.kd-identity--md .kd-identity-name {
+  font-size: var(--font-size-md);
+}
+
+.kd-identity--sm .kd-avatar,
+.kd-identity--sm .kd-placeholder {
+  width: 32px;
+  height: 32px;
+}
+
+.kd-identity--sm .kd-identity-name {
+  font-size: var(--font-size-sm);
+}
+
+/* =========================================================================
+ * UpgradePrompt (former UpgradePrompt.module.css)
+ * ========================================================================= */
+
+.kd-upgrade-pill,
+.kd-upgrade-callout {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+}
+
+.kd-upgrade-pill {
+  flex: 1 1 0;
+  justify-content: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+}
+
+.kd-upgrade-callout {
+  display: flex;
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-md);
+}
+
+.kd-upgrade-lock {
+  flex: none;
+}
+
+.kd-upgrade-label {
+  line-height: 1.2;
+}
+
+/* =========================================================================
+ * ScheduleScreen (former ScheduleScreen.module.css)
+ * ========================================================================= */
+
+.kd-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-5);
+  background: var(--color-background);
+}
+
+.kd-schedule-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.kd-schedule-summary {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.kd-mode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.kd-mode--solo {
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-border-strong);
+}
+
+.kd-mode--paired {
+  background: var(--color-success-soft);
+  border: 1px solid var(--color-success);
+}
+
+.kd-mode-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--color-text);
+}
+
+.kd-mode-detail {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.kd-invite-button {
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-5);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.kd-invite-button:hover {
+  background: var(--color-primary-soft);
+}
+
+.kd-invite-button:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+.kd-section-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.kd-validation {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-soft);
+  border: 1px solid var(--color-warning);
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.kd-confirm-button {
+  width: 100%;
+  padding: var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: background 0.15s ease;
+}
+
+.kd-confirm-button:hover {
+  background: var(--color-primary-strong);
+}
+
+.kd-confirm-button:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+ * DatePicker (former DatePicker.module.css)
+ * ========================================================================= */
+
+.kd-date-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.kd-date-strip {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+}
+
+.kd-date {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 56px;
+  padding: var(--space-3) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.kd-date:hover {
+  background: var(--color-surface-muted);
+}
+
+.kd-date-weekday {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kd-date-day {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.kd-date--recommended {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.kd-date-recommended-tag {
+  display: inline-block;
+  margin-top: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.kd-date--selected {
+  border-color: var(--color-primary-strong);
+  box-shadow: 0 0 0 2px var(--color-primary-strong) inset;
+}
+
+.kd-date:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+ * TimeSlotPicker (former TimeSlotPicker.module.css)
+ * ========================================================================= */
+
+.kd-slot-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.kd-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.kd-slot:hover {
+  background: var(--color-surface-muted);
+}
+
+.kd-slot-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.kd-slot-time {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.kd-slot--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+.kd-slot--selected .kd-slot-time {
+  color: var(--color-primary-strong);
+}
+
+.kd-slot:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+ * ConfirmationScreen (former ConfirmationScreen.module.css)
+ * ========================================================================= */
+
+.kd-confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-5);
+  background: var(--color-background-alt);
+}
+
+.kd-confirmation-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.kd-eyebrow {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-success);
+}
+
+.kd-confirmation-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.kd-confirmation-subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.kd-confirmation-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.kd-share-button {
+  width: 100%;
+  padding: var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-success);
+  color: var(--color-success-contrast);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: background 0.15s ease;
+}
+
+.kd-share-button:hover:not(:disabled) {
+  background: var(--color-success-strong);
+}
+
+.kd-share-button:focus-visible {
+  outline: 2px solid var(--color-success-strong);
+  outline-offset: 2px;
+}
+
+.kd-share-button:disabled {
+  background: var(--color-success-soft);
+  color: var(--color-success-strong);
+  cursor: default;
+  box-shadow: none;
+}
+
+.kd-back-button {
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-success-strong);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.kd-back-button:hover {
+  background: var(--color-success-soft);
+}
+
+.kd-back-button:focus-visible {
+  outline: 2px solid var(--color-success-strong);
+  outline-offset: 2px;
+}
+
+/* Schedule screen's primary back-to-discover button (violet variant). */
+.kd-back-button--primary {
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s ease;
+}
+
+.kd-back-button--primary:hover {
+  background: var(--color-primary-strong);
+}
+
+/* =========================================================================
+ * WorkshopPass (former WorkshopPass.module.css)
+ * ========================================================================= */
+
+.kd-pass {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-background-alt);
+  border: 1px solid var(--color-success-soft);
+  border-top: 4px solid var(--color-success);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-md);
+}
+
+.kd-pass-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kd-pass-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-success-soft);
+  color: var(--color-success-strong);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+.kd-pass-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--color-success);
+  color: var(--color-success-contrast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.kd-pass-title {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.kd-pass-studio {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.kd-pass-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-success-soft);
+}
+
+.kd-pass-detail-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.kd-pass-detail-label {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kd-pass-detail-value {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.kd-pass-attendee {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-success-soft);
+}
+
+.kd-pass-attendee-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* =========================================================================
+ * Shared empty-state block (used across Pairs / Schedule / Confirmation)
+ * ========================================================================= */
+
+.kd-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.kd-empty-title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.kd-empty-body {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}

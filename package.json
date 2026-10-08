@@ -1,0 +1,19 @@
+{
+  "name": "kindred-prototype",
+  "version": "1.0.0",
+  "description": "Kindred Workshop Pairing App - Prototype",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint js/",
+    "lint:fix": "eslint js/ --fix",
+    "ci": "npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "babel-jest": "^29.7.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}

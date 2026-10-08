@@ -1,0 +1,40 @@
+stages:
+  - lint
+  - test
+  - build
+
+default:
+  image: node:18-alpine
+  before_script:
+    - npm ci
+
+# ── Stage 1: Lint ─────────────────────────────────────────────────────────────
+lint:
+  stage: lint
+  script:
+    - echo "Running ESLint..."
+    - npm run lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ── Stage 2: Test ─────────────────────────────────────────────────────────────
+test:
+  stage: test
+  script:
+    - echo "Running Jest tests..."
+    - npm test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ── Stage 3: Build ────────────────────────────────────────────────────────────
+# Only reached when lint + test both pass — the release gate.
+build:
+  stage: build
+  script:
+    - echo "✅ All quality gates passed."
+    - echo "✅ Kindred prototype is clean and ready for release."
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"

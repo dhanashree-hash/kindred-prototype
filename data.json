@@ -1,0 +1,192 @@
+{
+  "currentUserId": "u_current",
+  "users": {
+    "u_current": {
+      "id": "u_current",
+      "name": "Jane Doe",
+      "photo": null,
+      "bio": "Weekend maker chasing color and clay. Happiest with paint on my sleeves.",
+      "distance": "0 mi",
+      "interestTags": ["Watercolor", "Ceramics", "Slow mornings"]
+    },
+    "u_wren": {
+      "id": "u_wren",
+      "name": "Cobalt Wren",
+      "photo": null,
+      "bio": "Landscape dabbler who never leaves without a travel palette.",
+      "distance": "0.6 mi",
+      "interestTags": ["Watercolor", "Plein air", "Tea breaks"]
+    },
+    "u_fox": {
+      "id": "u_fox",
+      "name": "Amber Fox",
+      "photo": null,
+      "bio": "Ceramics enthusiast collecting far too many mugs.",
+      "distance": "1.1 mi",
+      "interestTags": ["Ceramics", "Wheel throwing", "Glazes"]
+    },
+    "u_marlow": {
+      "id": "u_marlow",
+      "name": "Sage Marlow",
+      "photo": null,
+      "bio": "Print nerd with an ever-growing pile of carved blocks.",
+      "distance": "1.4 mi",
+      "interestTags": ["Printmaking", "Linocut", "Zines"]
+    },
+    "u_quill": {
+      "id": "u_quill",
+      "name": "Indigo Quill",
+      "photo": null,
+      "bio": "Sketchbook loyalist who draws strangers on the train.",
+      "distance": "2.0 mi",
+      "interestTags": ["Sketching", "Ink", "People watching"]
+    }
+  },
+  "workshops": [
+    {
+      "id": "w_watercolor_landscapes",
+      "medium": "Watercolor",
+      "price": "$45",
+      "title": "Loose Watercolor Landscapes",
+      "studio": "Riverside Studio",
+      "location": "Mission District",
+      "distance": "1.2 mi",
+      "sessionDate": "2025-05-22",
+      "sessionTime": "6:30 PM",
+      "spotsLeft": 5
+    },
+    {
+      "id": "w_wheel_throwing",
+      "medium": "Ceramics",
+      "price": "$60",
+      "title": "Wheel Throwing Basics",
+      "studio": "Kiln & Co.",
+      "location": "Potrero Hill",
+      "distance": "0.9 mi",
+      "sessionDate": "2025-05-24",
+      "sessionTime": "5:45 PM",
+      "spotsLeft": 3
+    },
+    {
+      "id": "w_intro_linocut",
+      "medium": "Printmaking",
+      "price": "$38",
+      "title": "Intro to Linocut Printing",
+      "studio": "Press Room Collective",
+      "location": "Dogpatch",
+      "distance": "1.6 mi",
+      "sessionDate": "2025-05-27",
+      "sessionTime": "7:00 PM",
+      "spotsLeft": 8
+    },
+    {
+      "id": "w_urban_sketching",
+      "medium": "Sketching",
+      "price": "$28",
+      "title": "Urban Sketching at Dusk",
+      "studio": "Corner Light Loft",
+      "location": "North Beach",
+      "distance": "2.3 mi",
+      "sessionDate": "2025-05-29",
+      "sessionTime": "6:00 PM",
+      "spotsLeft": 12
+    },
+    {
+      "id": "w_watercolor_botanicals",
+      "medium": "Watercolor",
+      "price": "$52",
+      "title": "Botanical Watercolor Studies",
+      "studio": "Fernway Atelier",
+      "location": "Hayes Valley",
+      "distance": "0.7 mi",
+      "sessionDate": "2025-06-01",
+      "sessionTime": "8:00 PM",
+      "spotsLeft": 2
+    },
+    {
+      "id": "w_handbuilding_mugs",
+      "medium": "Ceramics",
+      "price": "$55",
+      "title": "Hand-Building Everyday Mugs",
+      "studio": "Kiln & Co.",
+      "location": "Potrero Hill",
+      "distance": "0.9 mi",
+      "sessionDate": "2025-06-03",
+      "sessionTime": "6:30 PM",
+      "spotsLeft": 6
+    },
+    {
+      "id": "w_gelli_printing",
+      "medium": "Printmaking",
+      "price": "$42",
+      "title": "Gelli Plate Print Party",
+      "studio": "Press Room Collective",
+      "location": "Dogpatch",
+      "distance": "1.6 mi",
+      "sessionDate": "2025-06-05",
+      "sessionTime": "5:45 PM",
+      "spotsLeft": 4
+    }
+  ],
+  "neighbors": [
+    {
+      "id": "n_wren",
+      "userId": "u_wren",
+      "matchPercentage": 92,
+      "distance": "0.6 mi",
+      "bio": "Landscape dabbler who never leaves without a travel palette.",
+      "interestTags": ["Watercolor", "Plein air", "Tea breaks"],
+      "sharedWorkshopIds": ["w_watercolor_landscapes", "w_watercolor_botanicals"]
+    },
+    {
+      "id": "n_fox",
+      "userId": "u_fox",
+      "matchPercentage": 88,
+      "distance": "1.1 mi",
+      "bio": "Ceramics enthusiast collecting far too many mugs.",
+      "interestTags": ["Ceramics", "Wheel throwing", "Glazes"],
+      "sharedWorkshopIds": ["w_wheel_throwing", "w_handbuilding_mugs"]
+    },
+    {
+      "id": "n_marlow",
+      "userId": "u_marlow",
+      "matchPercentage": 81,
+      "distance": "1.4 mi",
+      "bio": "Print nerd with an ever-growing pile of carved blocks.",
+      "interestTags": ["Printmaking", "Linocut", "Zines"],
+      "sharedWorkshopIds": ["w_intro_linocut", "w_gelli_printing"]
+    },
+    {
+      "id": "n_quill",
+      "userId": "u_quill",
+      "matchPercentage": 74,
+      "distance": "2.0 mi",
+      "bio": "Sketchbook loyalist who draws strangers on the train.",
+      "interestTags": ["Sketching", "Ink", "People watching"],
+      "sharedWorkshopIds": ["w_urban_sketching"]
+    }
+  ],
+  "pairingRequests": [
+    {
+      "id": "pr_incoming_wheel",
+      "workshopId": "w_wheel_throwing",
+      "fromUserId": "u_fox",
+      "toUserId": "u_current",
+      "message": "Want to split a wheel and go halves on clay?",
+      "status": "incoming"
+    },
+    {
+      "id": "pr_incoming_watercolor",
+      "workshopId": "w_watercolor_landscapes",
+      "fromUserId": "u_wren",
+      "toUserId": "u_current",
+      "message": "I keep meaning to try this one - pair up by the river?",
+      "status": "incoming"
+    }
+  ],
+  "timeSlots": [
+    { "id": "bestFit", "label": "Session start / Best fit", "time": "6:30 PM" },
+    { "id": "coffeeFirst", "label": "Coffee first", "time": "5:45 PM" },
+    { "id": "eveningGroup", "label": "Evening group", "time": "8:00 PM" }
+  ]
+}
