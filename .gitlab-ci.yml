@@ -1,7 +1,12 @@
+include:
+  - template: Security/SAST.gitlab-ci.yml
+
 stages:
   - lint
   - test
+  - sast
   - build
+  - deploy
 
 default:
   image: node:18-alpine
@@ -28,8 +33,12 @@ test:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "main"
 
-# ── Stage 3: Build ────────────────────────────────────────────────────────────
-# Only reached when lint + test both pass — the release gate.
+# ── Stage 3: SAST ─────────────────────────────────────────────────────────────
+# Provided automatically by the Security/SAST.gitlab-ci.yml template above.
+# Scans JavaScript source with Semgrep and reports findings in the MR Security tab.
+# No manual job definition required here.
+
+# ── Stage 4: Build ────────────────────────────────────────────────────────────
 build:
   stage: build
   script:
@@ -37,4 +46,16 @@ build:
     - echo "✅ Kindred prototype is clean and ready for release."
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ── Stage 5: Deploy (simulated) ───────────────────────────────────────────────
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script: []
+  script:
+    - echo "🚀 Deploying Kindred to staging environment..."
+    - sleep 2
+    - echo "✅ Deployment complete — app is live at staging.kindred.app"
+  rules:
     - if: $CI_COMMIT_BRANCH == "main"
