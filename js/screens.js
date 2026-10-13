@@ -60,12 +60,25 @@ function svg(markup) {
  * @param {string} text       - The display string to highlight within.
  * @param {string} searchTerm - The active search query (sourced from the
  *                              search input via state.searchTerm).
- * @returns {string} HTML string with matching segments wrapped in <mark>.
+ * @returns {DocumentFragment} DOM fragment with matched segments in <mark> nodes.
+ *   User data is set via textContent only — never via innerHTML.
  */
 function highlightMatch(text, searchTerm) {
-  if (!searchTerm || !searchTerm.trim()) return text;
-  const regex = new RegExp(searchTerm, 'gi');
-  return text.replace(regex, '<mark>$&</mark>');
+  if (!searchTerm || !searchTerm.trim()) return document.createTextNode(text);
+  const term = searchTerm.trim();
+  const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${safe})`, 'gi'));
+  const fragment = document.createDocumentFragment();
+  for (const part of parts) {
+    if (part.toLowerCase() === term.toLowerCase()) {
+      const mark = document.createElement('mark');
+      mark.textContent = part;          // safe: user data via textContent
+      fragment.appendChild(mark);
+    } else {
+      fragment.appendChild(document.createTextNode(part)); // safe: plain text node
+    }
+  }
+  return fragment;
 }
 
 // ---------------------------------------------------------------------------
@@ -486,12 +499,13 @@ export function renderDiscover(state, dispatch) {
     el('p', { className: 'kd-result-count', textContent: `${count} ${count === 1 ? 'workshop' : 'workshops'}`, dataset: { testid: 'discover-count' } }),
   );
 
-  // Search feedback — show the active search term highlighted above results
-  // so users can see at a glance what they searched for.
+  // Search feedback — show the active search term highlighted above results.
+  // Safe: built with DOM APIs, no innerHTML on user data (fixes CWE-79).
   if (searchTerm.trim()) {
     const feedback = document.createElement('p');
     feedback.className = 'kd-search-feedback';
-    feedback.innerHTML = `Showing results for: ${highlightMatch(searchTerm, searchTerm)}`;
+    feedback.appendChild(document.createTextNode('Showing results for: '));
+    feedback.appendChild(highlightMatch(searchTerm, searchTerm));
     screen.appendChild(feedback);
   }
 

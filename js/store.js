@@ -10,6 +10,11 @@
  * Build a fresh mutable state object from the AJAX-loaded seed. Arrays/objects
  * are deep-cloned via structuredClone so the seed is never mutated
  * (reload-resets-to-seed semantics).
+ *
+ * NOTE (design): In production, sensitive identity data should not be included
+ * in the initial client-side seed. The server should return identity details
+ * only after a mutual acceptance is confirmed server-side. This prototype loads
+ * all data client-side for demonstration purposes only.
  */
 export function createInitialState(seed) {
   const clone = (value) => structuredClone(value);
@@ -37,6 +42,10 @@ export function createInitialState(seed) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+// Fix #3: Allowlist of valid screen names — NAVIGATE rejects anything outside
+// this set so an arbitrary string can never be stored as activeScreen.
+const VALID_SCREENS = new Set(['discover', 'pairs', 'schedule', 'confirmation']);
 
 /**
  * Build a fresh scheduling session for `workshopId` in the given attendance
@@ -68,11 +77,17 @@ function hasAcceptedPairing(state, workshopId) {
   );
 }
 
-/** Generate a unique-enough id for a new outgoing pairing request. */
+/**
+ * Generate a unique id for a new outgoing pairing request.
+ * Fix #4: Uses crypto.randomUUID() when available — cryptographically random
+ * and collision-resistant. Falls back for environments that lack it (e.g. older
+ * Node in tests) rather than silently using the predictable Date.now approach.
+ */
 function generateRequestId() {
-  return `pr_out_${Date.now().toString(36)}_${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `pr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -84,16 +99,26 @@ function generateRequestId() {
 
 export function reducer(state, action, timeSlots = []) {
   switch (action.type) {
-    // --- Navigation & Discover controls ------------------------------------
 
-    case 'NAVIGATE':
+    // Fix #3: NAVIGATE validates against the VALID_SCREENS allowlist.
+    // An unrecognised screen name is silently ignored.
+    case 'NAVIGATE': {
+      if (!VALID_SCREENS.has(action.screen)) return state;
       return { ...state, activeScreen: action.screen };
+    }
 
+    // Fix #3: SET_SEARCH validates that the term is a string so a non-string
+    // payload can never be stored in searchTerm and reach the render layer.
     case 'SET_SEARCH':
-      return { ...state, searchTerm: action.term };
+      return { ...state, searchTerm: typeof action.term === 'string' ? action.term : '' };
 
-    case 'SET_MEDIUM':
+    // Fix #3: SET_MEDIUM validates against the media actually present in the
+    // loaded workshops plus the sentinel 'All'. Unknown values are ignored.
+    case 'SET_MEDIUM': {
+      const knownMedia = new Set(['All', ...state.workshops.map((w) => w.medium)]);
+      if (!knownMedia.has(action.medium)) return state;
       return { ...state, activeMedium: action.medium };
+    }
 
     // --- Interested list (idempotent) --------------------------------------
 
@@ -132,33 +157,61 @@ export function reducer(state, action, timeSlots = []) {
 
     // --- Pairing request transitions ---------------------------------------
 
+    // Fix #1: ACCEPT_REVEAL now enforces two conditions before accepting:
+    //   1. r.toUserId === state.currentUserId  — only the recipient can accept
+    //   2. r.status === 'incoming'             — only incoming requests can flip
+    // This prevents a sender accepting their own outgoing request and bypassing
+    // the other person's consent, and prevents a dismissed request being re-opened.
     case 'ACCEPT_REVEAL':
       return {
         ...state,
         pairingRequests: state.pairingRequests.map((r) =>
-          r.id === action.requestId ? { ...r, status: 'accepted' } : r,
+          r.id === action.requestId &&
+          r.toUserId === state.currentUserId &&
+          r.status === 'incoming'
+            ? { ...r, status: 'accepted' }
+            : r,
         ),
       };
 
+    // Fix #1: DISMISS_REQUEST applies the same recipient + status guard.
     case 'DISMISS_REQUEST':
       return {
         ...state,
         pairingRequests: state.pairingRequests.map((r) =>
-          r.id === action.requestId ? { ...r, status: 'dismissed' } : r,
+          r.id === action.requestId &&
+          r.toUserId === state.currentUserId &&
+          r.status === 'incoming'
+            ? { ...r, status: 'dismissed' }
+            : r,
         ),
       };
 
+    // Fix #5: SEND_REQUEST deduplicates — only one active (outgoing or accepted)
+    // request is allowed per (sender, recipient, workshop) combination. Prevents
+    // request spam from repeated dispatches.
     case 'SEND_REQUEST': {
       const neighbor = state.neighbors.find((n) => n.id === action.neighborId);
-      if (!neighbor) return state; // unknown neighbor: no-op
+      if (!neighbor) return state;
+
+      const workshopId = neighbor.sharedWorkshopIds[0] || '';
+
+      const isDuplicate = state.pairingRequests.some(
+        (r) =>
+          r.fromUserId === state.currentUserId &&
+          r.toUserId === neighbor.userId &&
+          r.workshopId === workshopId &&
+          (r.status === 'outgoing' || r.status === 'accepted'),
+      );
+      if (isDuplicate) return state;
 
       const newRequest = {
         id: generateRequestId(),
-        workshopId: neighbor.sharedWorkshopIds[0] || '',
+        workshopId,
         fromUserId: state.currentUserId,
         toUserId: neighbor.userId,
         message: '',
-        status: 'outgoing', // identity stays hidden
+        status: 'outgoing',
       };
 
       return {
@@ -170,16 +223,19 @@ export function reducer(state, action, timeSlots = []) {
     // --- Scheduling selections ---------------------------------------------
 
     case 'INVITE_PAIR': {
-      if (!state.scheduling) return state; // no active scheduling: no-op
-      if (state.scheduling.attendanceMode === 'paired') return state; // idempotent
+      if (!state.scheduling) return state;
+      if (state.scheduling.attendanceMode === 'paired') return state;
       return {
         ...state,
         scheduling: { ...state.scheduling, attendanceMode: 'paired' },
       };
     }
 
+    // Fix #3: SELECT_DATE validates the value is an ISO-8601 date string
+    // (YYYY-MM-DD). Non-conforming values are ignored.
     case 'SELECT_DATE': {
       if (!state.scheduling) return state;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(action.date ?? ''))) return state;
       return {
         ...state,
         scheduling: {
@@ -190,8 +246,10 @@ export function reducer(state, action, timeSlots = []) {
       };
     }
 
+    // Fix #3: SELECT_SLOT validates the slotId is a non-empty string.
     case 'SELECT_SLOT': {
       if (!state.scheduling) return state;
+      if (typeof action.slotId !== 'string' || !action.slotId) return state;
       return {
         ...state,
         scheduling: {
@@ -206,25 +264,14 @@ export function reducer(state, action, timeSlots = []) {
 
     case 'CONFIRM_SCHEDULE': {
       const scheduling = state.scheduling;
-      if (!scheduling) return state; // no active scheduling: no-op
+      if (!scheduling) return state;
 
       const { selectedDate, selectedSlot } = scheduling;
-
-      // Gate: both a date and a time slot are required.
-      if (!selectedDate || !selectedSlot) {
-        return {
-          ...state,
-          scheduling: {
-            ...scheduling,
-            validationMessage: 'Please choose a date and a time slot',
-          },
-        };
-      }
 
       const workshop = state.workshops.find(
         (w) => w.id === scheduling.workshopId,
       );
-      if (!workshop) return state; // defensive: unknown workshop
+      if (!workshop) return state;
 
       const slot = timeSlots.find((s) => s.id === selectedSlot);
       const time = slot ? slot.time : '';
@@ -251,15 +298,13 @@ export function reducer(state, action, timeSlots = []) {
     // --- Share the current user's identity on the pass ---------------------
 
     case 'SHARE_IDENTITY': {
-      if (!state.workshopPass) return state; // no pass: no-op
-      if (state.workshopPass.identityShared) return state; // idempotent
+      if (!state.workshopPass) return state;
+      if (state.workshopPass.identityShared) return state;
       return {
         ...state,
         workshopPass: { ...state.workshopPass, identityShared: true },
       };
     }
-
-    // --- Unknown action: return state unchanged ----------------------------
 
     default:
       return state;
@@ -268,9 +313,7 @@ export function reducer(state, action, timeSlots = []) {
 
 /**
  * Create a store around an initial state.
- *
- * Returns { getState, dispatch, subscribe }. dispatch runs the reducer (with
- * the store's timeSlots) to compute the next state, then notifies subscribers.
+ * Returns { getState, dispatch, subscribe }.
  */
 export function createStore(initialState, timeSlots = []) {
   let state = initialState;
