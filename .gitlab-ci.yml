@@ -37,11 +37,11 @@ test:
 
 # ── Stage 3: Security scanning ────────────────────────────────────────────────
 # Three scanners run in parallel in this stage, all injected by the
-# templates above. No manual job definitions needed.
-#
-#  semgrep-sast        — static analysis, catches code-level vulnerabilities
-#  dependency_scanning — checks npm packages against the CVE database
-#  secret_detection    — scans for hardcoded credentials, tokens, keys
+# templates above. semgrep-sast is set to fail the pipeline when
+# vulnerabilities are found so the build stage is blocked.
+
+semgrep-sast:
+  allow_failure: false   # fail the pipeline on any finding — build is blocked
 
 # ── Stage 4: Build ────────────────────────────────────────────────────────────
 build:
