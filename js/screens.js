@@ -47,6 +47,28 @@ function svg(markup) {
 }
 
 // ---------------------------------------------------------------------------
+// Search highlight — wraps matched term in <mark> tags for visual emphasis
+// ---------------------------------------------------------------------------
+
+/**
+ * Replaces every occurrence of `searchTerm` inside `text` with a <mark>
+ * wrapper so the active search term is visually highlighted in the results
+ * header. Handles partial matches and is case-insensitive.
+ *
+ * Returns the original `text` unchanged when no search term is active.
+ *
+ * @param {string} text       - The display string to highlight within.
+ * @param {string} searchTerm - The active search query (sourced from the
+ *                              search input via state.searchTerm).
+ * @returns {string} HTML string with matching segments wrapped in <mark>.
+ */
+function highlightMatch(text, searchTerm) {
+  if (!searchTerm || !searchTerm.trim()) return text;
+  const regex = new RegExp(searchTerm, 'gi');
+  return text.replace(regex, '<mark>$&</mark>');
+}
+
+// ---------------------------------------------------------------------------
 // Date / number formatting helpers
 // ---------------------------------------------------------------------------
 
@@ -463,6 +485,15 @@ export function renderDiscover(state, dispatch) {
   screen.appendChild(
     el('p', { className: 'kd-result-count', textContent: `${count} ${count === 1 ? 'workshop' : 'workshops'}`, dataset: { testid: 'discover-count' } }),
   );
+
+  // Search feedback — show the active search term highlighted above results
+  // so users can see at a glance what they searched for.
+  if (searchTerm.trim()) {
+    const feedback = document.createElement('p');
+    feedback.className = 'kd-search-feedback';
+    feedback.innerHTML = `Showing results for: ${highlightMatch(searchTerm, searchTerm)}`;
+    screen.appendChild(feedback);
+  }
 
   // Workshop list or empty state
   if (isEmpty) {

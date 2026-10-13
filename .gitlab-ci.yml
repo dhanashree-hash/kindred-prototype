@@ -1,5 +1,7 @@
 include:
   - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
 
 stages:
   - lint
@@ -33,10 +35,13 @@ test:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "main"
 
-# ── Stage 3: SAST ─────────────────────────────────────────────────────────────
-# Provided automatically by the Security/SAST.gitlab-ci.yml template above.
-# Scans JavaScript source with Semgrep and reports findings in the MR Security tab.
-# No manual job definition required here.
+# ── Stage 3: Security scanning ────────────────────────────────────────────────
+# Three scanners run in parallel in this stage, all injected by the
+# templates above. No manual job definitions needed.
+#
+#  semgrep-sast        — static analysis, catches code-level vulnerabilities
+#  dependency_scanning — checks npm packages against the CVE database
+#  secret_detection    — scans for hardcoded credentials, tokens, keys
 
 # ── Stage 4: Build ────────────────────────────────────────────────────────────
 build:
