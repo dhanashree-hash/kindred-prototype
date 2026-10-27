@@ -67,7 +67,7 @@ function highlightMatch(text, searchTerm) {
   if (!searchTerm || !searchTerm.trim()) return document.createTextNode(text);
   const term = searchTerm.trim();
   const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const parts = text.split(new RegExp(`(${safe})`, 'gi')); // nosemgrep: javascript.lang.security.detect-non-literal-regexp
+  const parts = text.split(new RegExp(`(${safe})`, 'gi')); // nosemgrep
   const fragment = document.createDocumentFragment();
   for (const part of parts) {
     if (part.toLowerCase() === term.toLowerCase()) {
