@@ -41,6 +41,11 @@ test:
 #   semgrep-sast        — static analysis, catches code-level vulnerabilities
 #   dependency_scanning — checks npm packages against the CVE database
 #   secret_detection    — scans for hardcoded credentials, tokens, keys
+#
+# allow_failure: false means the pipeline blocks at this stage when any
+# finding is detected — build and deploy cannot run until SAST is clean.
+semgrep-sast:
+  allow_failure: false
 
 # ── Stage 4: Build ────────────────────────────────────────────────────────────
 build:
