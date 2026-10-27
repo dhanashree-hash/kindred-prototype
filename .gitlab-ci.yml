@@ -12,12 +12,12 @@ stages:
 
 default:
   image: node:18-alpine
-  before_script:
-    - npm ci
 
 # ── Stage 1: Lint ─────────────────────────────────────────────────────────────
 lint:
   stage: lint
+  before_script:
+    - npm ci
   script:
     - echo "Running ESLint..."
     - npm run lint
@@ -28,6 +28,8 @@ lint:
 # ── Stage 2: Test ─────────────────────────────────────────────────────────────
 test:
   stage: test
+  before_script:
+    - npm ci
   script:
     - echo "Running Jest tests..."
     - npm test
@@ -50,6 +52,8 @@ semgrep-sast:
 # ── Stage 4: Build ────────────────────────────────────────────────────────────
 build:
   stage: build
+  before_script:
+    - npm ci
   script:
     - echo "✅ All quality gates passed."
     - echo "✅ Kindred prototype is clean and ready for release."
