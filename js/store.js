@@ -271,17 +271,6 @@ export function reducer(state, action, timeSlots = []) {
 
       const { selectedDate, selectedSlot } = scheduling;
 
-      // Gate: both a date and a time slot are required before building the pass.
-      if (!selectedDate || !selectedSlot) {
-        return {
-          ...state,
-          scheduling: {
-            ...scheduling,
-            validationMessage: 'Please choose a date and a time slot',
-          },
-        };
-      }
-
       const workshop = state.workshops.find(
         (w) => w.id === scheduling.workshopId,
       );
