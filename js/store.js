@@ -79,15 +79,18 @@ function hasAcceptedPairing(state, workshopId) {
 
 /**
  * Generate a unique id for a new outgoing pairing request.
- * Fix #4: Uses crypto.randomUUID() when available — cryptographically random
- * and collision-resistant. Falls back for environments that lack it (e.g. older
- * Node in tests) rather than silently using the predictable Date.now approach.
+ * Fix #4: Uses crypto.randomUUID() when available. Falls back to
+ * crypto.getRandomValues() — also cryptographically secure, no weak PRNG.
  */
 function generateRequestId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
-  return `pr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  // Secure fallback — crypto.getRandomValues is available in all modern
+  // environments and Node.js 14.10+ (no Math.random() weak PRNG involved).
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return `pr_${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 24)}`;
 }
 
 // ---------------------------------------------------------------------------
