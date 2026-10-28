@@ -1,270 +1,239 @@
 # GitLab Duo Demo Script — Kindred
 
-**Theme:** Release → Maintenance → Security issue caught and fixed with AI assistance  
-**Total time:** ~12–15 minutes  
+**Theme:** Release with clean security posture → maintenance regression caught by tests → AI-guided fix → clean merge  
+**Total time:** ~12 minutes  
 **Audience:** Engineering or product stakeholders evaluating GitLab Duo + security tooling
 
 ---
 
 ## The Story
 
-> "Kindred is a workshop pairing app that just shipped its first release.  
-> The codebase is clean, security scanning is enforced, and the pipeline is green.  
-> A few weeks later, during a maintenance cycle, a developer adds an analytics  
-> integration — and accidentally introduces two security issues.  
-> We'll use GitLab Duo and GitLab's built-in scanning to find and fix them,  
-> without leaving the browser."
+> "Kindred just shipped. The pipeline is green, the security report is clean.
+> A few weeks into maintenance, a developer refactors the scheduling confirmation
+> handler — and accidentally removes the date/time validation gate.
+> The pipeline catches it. We use GitLab Duo to understand and fix the issue,
+> then merge safely."
 
 ---
 
 ## Pre-Demo Checklist
 
-- [ ] GitLab project created, **`main`** branch pushed (clean state)
-- [ ] **`feature/analytics-integration`** branch pushed (has the security issues)
+- [ ] GitLab project created with **two branches pushed**: `main` and `feature/analytics-integration`
 - [ ] Pipeline has run on `main` — all stages green ✅
 - [ ] MR open from `feature/analytics-integration` → `main`
-- [ ] Pipeline has run on the MR — security stage failed 🔴
-- [ ] GitLab Duo Chat enabled (Ultimate tier)
+- [ ] Pipeline has run on the MR — test stage failed 🔴
+- [ ] GitLab Duo Chat enabled
 - [ ] Web IDE open in the browser
 
 ---
 
-## ── PHASE 1: Release ───────────────────────────────────────────────────────
+## ── PHASE 1: Release ─────────────────────────────────────────────────────
 
 ### Step 1 — Ask Duo to Explain the Code (~2 min)
 
-**Navigate to:** Web IDE → `main` branch → `js/screens.js`
+**Navigate to:** Web IDE → `main` branch → `js/store.js`
 
-**Scroll to `renderDiscover()`**, select the search feedback block, open Duo Chat:
+**Scroll to the `CONFIRM_SCHEDULE` case (~line 268), select it, open Duo Chat:**
 
 ```
-Explain how the search feature works in renderDiscover().
-Walk me through the highlightMatch() function — what does it do
-and how does it safely handle user input?
+Explain what CONFIRM_SCHEDULE does in this reducer.
+Walk me through the validation logic — what happens when a user
+taps Confirm without picking a date or time slot?
 ```
 
 **What Duo explains:**
-- `highlightMatch()` takes the active search term and wraps matches in `<mark>` tags
-- It builds a `DocumentFragment` using DOM APIs — `createElement`, `textContent`, `appendChild`
-- User data is **never** passed to `innerHTML` — set via `textContent` only, preventing XSS
-- The regex is built from an escaped version of the search term to prevent regex injection
+- `CONFIRM_SCHEDULE` validates that both `selectedDate` and `selectedSlot` are set
+- If either is missing, it returns a `validationMessage` and keeps the user on the schedule screen
+- Only when both are selected does it build the `workshopPass` and navigate to confirmation
+- This prevents the app from creating a booking with null date/time fields
 
 **Say:**
-> "The team built this safely from the start — Duo can confirm that right here.
-> Let's see what the security reports show."
+> "The validation gate is the key safety check here. Let's confirm the pipeline
+> and security reports reflect this clean state."
 
 ---
 
-### Step 2 — Compliance & Security Report (Clean) (~1 min)
+### Step 2 — Compliance & Security Report: Clean (~1 min)
 
 **Navigate to:** Security → Vulnerability Report
 
-**Show:** Zero findings. All clear.
+**Show:** Zero findings. No vulnerabilities in the codebase.
 
 **Navigate to:** CI/CD → Pipelines → latest pipeline on `main`
 
-**Show the stage breakdown:**
+**Show all five stages green:**
 ```
 lint ✅  →  test ✅  →  security ✅  →  build ✅  →  deploy ✅
 ```
 
 **Say:**
-> "Security scanning is enforced — `allow_failure: false` means any vulnerability  
-> would block the pipeline. Right now there's nothing to block. The app is clean,  
-> the pipeline is green, and it's live on staging."
-
-**This is the 'release' baseline. Everything is good. The app is shipped.**
+> "Security scanning is enforced — any finding would block this pipeline.
+> There's nothing to block. Tests pass, security is clean, the app is live."
 
 ---
 
-## ── PHASE 2: Maintenance ───────────────────────────────────────────────────
+## ── PHASE 2: Maintenance ─────────────────────────────────────────────────
 
-### Step 3 — Run the Failing Pipeline (~1 min)
+### Step 3 — The Failing Pipeline (~1 min)
 
-**Navigate to:** Merge Requests → `feature/analytics-integration` MR
+**Navigate to:** Merge Requests → `feature/analytics-integration`
 
-**Show the MR description** (see `GITLAB_ISSUE.md` for the issue text).
+**Show the MR:** A developer refactored the `CONFIRM_SCHEDULE` handler to "simplify" it.
+The commit message reads:
+> *"refactor: simplify CONFIRM_SCHEDULE handler — removed intermediate validation block  
+> to streamline the confirm flow. The UI already prevents confirming without selections."*
 
-**Point to the pipeline status on the MR:**
+**Point to the pipeline badge on the MR:**
 ```
-lint ✅  →  test ✅  →  security 🔴  →  build ░  →  deploy ░
+lint ✅  →  test 🔴  →  security ✅  →  build ░  →  deploy ░
 ```
 
 **Say:**
-> "A developer opened this MR during the maintenance cycle — it's meant to add an  
-> analytics integration stub. The pipeline ran automatically when the branch was  
-> pushed. Lint passes, tests pass, but it blocked at the security stage.  
-> Let's find out why."
+> "Lint passes — this isn't a syntax error. Security passes — there's no vulnerability.
+> But the test stage blocked the pipeline. Let's see why."
 
 ---
 
-### Step 4 — Pipeline Failed: View the Security Report (~2 min)
+### Step 4 — View the Test Failures (~2 min)
 
-**Navigate to:** MR → Security tab  
-OR  
-**Navigate to:** CI/CD → Pipelines → the failed MR pipeline → Security tab
+**Navigate to:** MR → CI/CD → the failed `test` job → job log
 
-**Show the two findings:**
-
-| Severity | Type | File | Line |
-|----------|------|------|------|
-| 🔴 Critical | Hardcoded GitLab Personal Access Token | `js/config.js` | 86 |
-| 🔴 High | DOM-based XSS — `innerHTML` with user input | `js/screens.js` | 492 |
-
-**Say:**
-> "Two issues caught before this ever touched main. A hardcoded API token — the developer  
-> left their credentials in the source code. And a DOM-based XSS introduced when they  
-> updated the search feature. The pipeline blocked both from shipping."
-
----
-
-### Step 5 — Ask Duo to Fix It (~3 min)
-
-#### Fix 1 — The XSS in `screens.js`
-
-**Navigate to:** Web IDE → `feature/analytics-integration` → `js/screens.js`
-
-**Select `highlightMatch()` and the feedback block, ask Duo:**
+**Show the failing test output:**
 
 ```
-This code has a DOM-based XSS vulnerability. The highlightMatch()
-function returns an HTML string that gets assigned to innerHTML,
-with searchTerm coming directly from user input.
+FAIL js/__tests__/store.test.js
 
-Fix it so the <mark> highlighting still works but user data never
-touches innerHTML.
+  CONFIRM_SCHEDULE — input validation
+    ✗ stays on schedule screen when neither date nor slot is selected
+    ✗ does NOT create a workshop pass when neither date nor slot is selected
+    ✗ shows a validation message when neither date nor slot is selected
+    ✗ stays on schedule screen when only a date is selected (no slot)
+    ✗ does NOT create a workshop pass when only a date is selected
+    ✗ shows a validation message when only a date is selected
+
+  CONFIRM_SCHEDULE — success path
+    ✓ navigates to confirmation when both date and slot are selected
+    ✓ creates a workshop pass with correct date and time
+    ...
+
+Tests: 6 failed, 6 passed, 12 total
+```
+
+**Say:**
+> "Six tests fail — all in the input validation group. The success path still works,
+> which confirms the refactor didn't break the happy path. But the guard that prevents
+> a booking without a date or time is gone. A user could now confirm a session
+> and get a pass with null date and time."
+
+**Navigate to:** Security → Vulnerability Report (or MR → Security tab)
+
+**Show:** Still zero findings. The security report is clean.
+
+**Say:**
+> "This isn't a security vulnerability — it's a functional regression.
+> The security report is still clean. The tests are the gate that caught this."
+
+---
+
+### Step 5 — Ask Duo to Fix It (~2 min)
+
+**Navigate to:** Web IDE → `feature/analytics-integration` → `js/store.js`
+
+**Select the `CONFIRM_SCHEDULE` case, open Duo Chat:**
+
+```
+The tests are failing because the validation gate is missing from
+CONFIRM_SCHEDULE. The reducer should block confirmation when
+selectedDate or selectedSlot is null, and return a validationMessage.
+
+Show me the fix.
 ```
 
 **Duo's fix — apply in the Web IDE:**
 
 ```js
-function highlightMatch(text, searchTerm) {
-  if (!searchTerm || !searchTerm.trim()) return document.createTextNode(text);
-  const term = searchTerm.trim();
-  const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const parts = text.split(new RegExp(`(${safe})`, 'gi'));
-  const fragment = document.createDocumentFragment();
-  for (const part of parts) {
-    if (part.toLowerCase() === term.toLowerCase()) {
-      const mark = document.createElement('mark');
-      mark.textContent = part;           // user data via textContent — never innerHTML
-      fragment.appendChild(mark);
-    } else {
-      fragment.appendChild(document.createTextNode(part));
-    }
+case 'CONFIRM_SCHEDULE': {
+  const scheduling = state.scheduling;
+  if (!scheduling) return state;
+
+  const { selectedDate, selectedSlot } = scheduling;
+
+  // Both a date and a time slot are required before creating a pass.
+  if (!selectedDate || !selectedSlot) {
+    return {
+      ...state,
+      scheduling: {
+        ...scheduling,
+        validationMessage: 'Please choose a date and a time slot',
+      },
+    };
   }
-  return fragment;
-}
+
+  // ... rest of the handler unchanged
 ```
 
-**Also update the usage:**
-
-```js
-if (searchTerm.trim()) {
-  const feedback = document.createElement('p');
-  feedback.className = 'kd-search-feedback';
-  feedback.appendChild(document.createTextNode('Showing results for: '));
-  feedback.appendChild(highlightMatch(searchTerm, searchTerm));
-  screen.appendChild(feedback);
-}
+**Commit message:**
 ```
+fix: restore date and time slot validation in CONFIRM_SCHEDULE
 
-#### Fix 2 — The hardcoded token in `config.js`
+The validation gate was accidentally removed in the previous refactor.
+Without it, a workshop pass can be created with null date and time fields.
 
-**Navigate to:** `js/config.js` → remove the hardcoded token:
-
-```js
-// Analytics integration (work in progress — not yet active)
-// Token loaded from environment variable — never hardcode credentials.
-const ANALYTICS_TOKEN = process.env.ANALYTICS_TOKEN || '';
-export const analyticsEnabled = false;
-```
-
-**Commit with message:**
-```
-fix: replace innerHTML with safe DOM APIs, remove hardcoded token
-
-- highlightMatch() now builds a DocumentFragment using textContent,
-  eliminating the DOM-based XSS vector (CWE-79) caught by SAST.
-- Replaced hardcoded ANALYTICS_TOKEN with environment variable reference.
-  Credentials must never be stored in source code.
+Restores the guard that returns a validationMessage when either
+selectedDate or selectedSlot is not set.
 ```
 
 ---
 
-### Step 6 — Compliance & Security Report (Clean) (~1 min)
+### Step 6 — Compliance & Security Report: Clean (~30 sec)
 
 **After the fix pipeline completes:**
 
-**Navigate to:** MR → Security tab  
-**Show:** No new vulnerabilities introduced.
+**Navigate to:** CI/CD → Pipelines → latest MR pipeline
 
-**Navigate to:** CI/CD → Pipelines → latest MR pipeline  
-**Show:**
+**Show all stages green:**
 ```
 lint ✅  →  test ✅  →  security ✅  →  build ✅  →  deploy ✅
 ```
 
+**Navigate to:** Security → Vulnerability Report
+
+**Show:** Zero findings. Same clean state as the release baseline.
+
 **Say:**
-> "Same pipeline, same security gates — this time the code is clean.  
-> The reports show no findings. We're back to the release baseline."
+> "All 12 tests pass. Security is still clean. We're back to the same state
+> as the release — the regression is fixed and nothing new was introduced."
 
 ---
 
-### Step 7 — Merge the MR (~30 sec)
+### Step 7 — Merge (~30 sec)
 
 **Navigate to:** Merge Requests → the open MR
 
 **Show:**
 - Pipeline passed ✅
-- MR Security widget: no new vulnerabilities ✅
-- MR is now mergeable
+- No new security vulnerabilities ✅
+- MR is mergeable
 
 **Click Merge.**
 
 **Say:**
-> "That's the full loop. Release is clean, a maintenance update introduces real issues,  
-> GitLab catches both, Duo fixes both, the security gate clears, and it merges safely.  
-> The code that reaches main is always clean."
+> "From clean release, through a realistic maintenance regression, to a fix —
+> without leaving the browser. The tests caught what lint and security couldn't.
+> Duo explained it, fixed it, and the pipeline confirmed it."
 
 ---
 
 ## Talking Points
 
-**"Why did lint and tests pass but security fail?"**  
-The test suite covers the store logic — pure reducer functions. DOM rendering in `screens.js` has no unit tests. And ESLint's `recommended` ruleset doesn't have XSS rules. SAST catches what tests and linting can't: how data flows at runtime.
+**"Why didn't lint catch this?"**  
+ESLint checks for syntax and style. Removing a validation block is perfectly valid JavaScript — there's no rule that says 'you must validate before building an object.' Tests catch semantic regressions, not just syntax issues.
 
-**"How did the developer miss the XSS?"**  
-The pattern `element.innerHTML = template_literal` looks completely normal. It's one of the most common mistakes in vanilla JavaScript. The developer was thinking about the feature, not the security model. That's exactly what automated scanning is for.
+**"Why didn't the security scan catch this?"**  
+The security scanner looks for vulnerabilities — XSS, injection, hardcoded secrets. A missing business logic validation isn't a security vulnerability in the traditional sense. It's a functional bug, and that's exactly what unit tests are for.
 
-**"What about the token — shouldn't the developer have noticed?"**  
-Secret detection scans the full diff, not just the files you're thinking about. A developer working on an analytics integration might commit config changes alongside UI changes. GitLab catches the token even if it's buried in an unrelated file.
+**"The developer's commit message says 'the UI already prevents it' — is that right?"**  
+Partially. The UI disables the Confirm button until both are selected. But the reducer is the source of truth — the store should never depend on the UI to enforce invariants. A UI can be bypassed; a reducer guard cannot.
 
-**"Can the merge be blocked automatically?"**  
-Yes — GitLab Ultimate security policies can require SAST to pass before any MR can be merged, enforced at the group level. No per-project CI config needed.
-
----
-
-## Reference: XSS Taint Flow (Maintenance branch)
-
-```
-User types in <input id="discover-search">
-  └─ onInput: dispatch({ type: 'SET_SEARCH', term: e.target.value })
-       └─ reducer: state.searchTerm = action.term
-            └─ renderDiscover() → const { searchTerm } = state
-                 └─ highlightMatch(searchTerm, searchTerm)
-                      └─ returns HTML string with raw searchTerm
-                           └─ feedback.innerHTML = `...${result}`
-                                                              ↑
-                                                         XSS SINK (CWE-79)
-```
-
-## Before / After Summary
-
-| | Release (`main`) | Maintenance MR (before fix) | Maintenance MR (after fix) |
-|---|---|---|---|
-| `highlightMatch` | Returns `DocumentFragment` | Returns HTML string | Returns `DocumentFragment` |
-| User data | Via `textContent` only | Injected into `innerHTML` | Via `textContent` only |
-| Credentials | No secrets in code | Hardcoded token | Environment variable |
-| Security stage | ✅ Passes | 🔴 Blocks | ✅ Passes |
-| Mergeable | ✅ | ✗ | ✅ |
+**"How does this scale to bigger projects?"**  
+The pattern is the same: reducers enforce invariants, tests document those invariants, and the pipeline enforces the tests. Duo helps developers understand and restore invariants they didn't write themselves.
