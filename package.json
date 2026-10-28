@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Kindred Workshop Pairing App - Prototype",
   "scripts": {
-    "test": "jest",
+    "test": "jest --forceExit",
     "lint": "eslint js/",
     "lint:fix": "eslint js/ --fix",
     "ci": "npm run lint && npm test"

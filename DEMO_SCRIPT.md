@@ -1,208 +1,165 @@
-# GitLab Duo Demo Script — Kindred: Search Highlight Feature
+# GitLab Duo Demo Script — Kindred
 
-**Theme:** AI-assisted development → code generation → code explanation → security scanning → fix  
-**Total time:** ~15 minutes  
+**Theme:** Release → Maintenance → Security issue caught and fixed with AI assistance  
+**Total time:** ~12–15 minutes  
 **Audience:** Engineering or product stakeholders evaluating GitLab Duo + security tooling
+
+---
+
+## The Story
+
+> "Kindred is a workshop pairing app that just shipped its first release.  
+> The codebase is clean, security scanning is enforced, and the pipeline is green.  
+> A few weeks later, during a maintenance cycle, a developer adds an analytics  
+> integration — and accidentally introduces two security issues.  
+> We'll use GitLab Duo and GitLab's built-in scanning to find and fix them,  
+> without leaving the browser."
 
 ---
 
 ## Pre-Demo Checklist
 
-Before you present, confirm these are ready:
-
-- [ ] GitLab project open in browser: `Demo-group/kindred-prototype`
-- [ ] GitLab issue #search-highlight created (use `GITLAB_ISSUE.md`)
-- [ ] `main` branch has the SAST + deploy CI (commit `7f090c1`)
-- [ ] `feature/search-highlight` pushed to GitLab and MR open (targeting `main`)
-- [ ] MR pipeline has run and shows the SAST finding
-- [ ] GitLab Duo Chat enabled on the project (Ultimate tier ✓)
-- [ ] Kindred app open locally at `index.html` in a browser (to demo the exploit live)
-- [ ] GitLab Web IDE open on `feature/search-highlight` → `js/screens.js`
+- [ ] GitLab project created, **`main`** branch pushed (clean state)
+- [ ] **`feature/analytics-integration`** branch pushed (has the security issues)
+- [ ] Pipeline has run on `main` — all stages green ✅
+- [ ] MR open from `feature/analytics-integration` → `main`
+- [ ] Pipeline has run on the MR — security stage failed 🔴
+- [ ] GitLab Duo Chat enabled (Ultimate tier)
+- [ ] Web IDE open in the browser
 
 ---
 
-## Act 1 — The Issue (2 min)
+## ── PHASE 1: Release ───────────────────────────────────────────────────────
 
-**What to show:** The GitLab issue.
+### Step 1 — Ask Duo to Explain the Code (~2 min)
 
-**Navigate to:** Issues → the search-highlight issue you created.
+**Navigate to:** Web IDE → `main` branch → `js/screens.js`
 
-**Say:**
-> "We have a feature request from the product team. Users are searching for workshops  
-> but there's no visual feedback showing what they searched for or where the match is.  
-> The ask is simple: highlight the active search term above the results list."
+**Scroll to `renderDiscover()`**, select the search feedback block, open Duo Chat:
 
-**Point out:**
-- The acceptance criteria (safe DOM rendering, no regressions)
-- The linked file reference: `js/screens.js` → `renderDiscover()`
-
----
-
-## Act 2 — GitLab Duo Generates the Code (3 min)
-
-**What to show:** GitLab Duo Chat or Web IDE with Duo suggestions.
-
-**Navigate to:** Web IDE → `js/screens.js` → scroll to `renderDiscover()`
-
-**Option A — Duo Chat prompt (copy-paste this):**
 ```
-I'm working on js/screens.js in the Kindred prototype.
-In renderDiscover(), after the result count, I want to show a
-feedback line like "Showing results for: [term]" with the search
-term visually highlighted using a <mark> wrapper.
-
-The active search term is in `searchTerm` (destructured from state).
-Write a highlightMatch() helper and the feedback element for me.
+Explain how the search feature works in renderDiscover().
+Walk me through the highlightMatch() function — what does it do
+and how does it safely handle user input?
 ```
-
-**What Duo generates (or show the pre-written code in screens.js):**
-
-```js
-function highlightMatch(text, searchTerm) {
-  if (!searchTerm || !searchTerm.trim()) return text;
-  const regex = new RegExp(searchTerm, 'gi');
-  return text.replace(regex, '<mark>$&</mark>');
-}
-```
-
-```js
-if (searchTerm.trim()) {
-  const feedback = document.createElement('p');
-  feedback.className = 'kd-search-feedback';
-  feedback.innerHTML = `Showing results for: ${highlightMatch(searchTerm, searchTerm)}`;
-  screen.appendChild(feedback);
-}
-```
-
-**Say:**
-> "Duo writes the feature in seconds. It produces a `highlightMatch` helper that builds  
-> the highlighted HTML string, and wires it into the Discover screen. The code looks  
-> reasonable at a glance — it's using a regex, the helper has a guard clause, it's clean."
-
----
-
-## Act 3 — Duo Explains the Code (2 min)
-
-**What to show:** Duo Chat explaining what was just generated.
-
-**This is the 'should have caught it earlier' moment in the narrative.**
-
-**Select** the `highlightMatch` function and the feedback block in the Web IDE.  
-**Open Duo Chat and ask:**
-```
-Explain what this code does, step by step. Are there any security
-concerns I should be aware of before committing it?
-```
-
-**What Duo should explain:**
-- `highlightMatch` builds an HTML string by replacing matches with `<mark>$&</mark>` using `RegExp`
-- The result is assigned to `feedback.innerHTML`
-- `searchTerm` originates from the search `<input>` — it is **raw user input**
-- Assigning user-controlled input to `innerHTML` is a classic **DOM-based XSS** vector
-- A payload like `<img src=x onerror=alert(document.cookie)>` would execute in the browser
-
-**Say:**
-> "This is a huge part of what Duo brings to the workflow. We can ask it to explain  
-> the code *before* we commit. And it catches the problem right here — it flags  
-> the innerHTML assignment and traces it back to the raw search input.  
-> But let's say the developer skipped this step and pushed anyway. What happens next?"
-
-**Live demo (optional — impressive if you have time):**
-1. Open `index.html` in a browser
-2. Type `<img src=x onerror=alert(1)>` into the search box
-3. The alert fires immediately — zero special setup needed
-4. Wipe the input, close the alert
-
----
-
-## Act 4 — Push to GitLab → Pipeline Runs (2 min)
-
-**What to show:** The MR and the running pipeline.
-
-**Navigate to:** Merge Requests → the `feature/search-highlight` MR.
-
-**Say:**
-> "The developer pushes the branch and opens an MR. The pipeline kicks off automatically.  
-> Watch the stages: Lint passes. Tests pass — Jest tests cover the store, not the  
-> DOM renderer, so they don't catch this. Then SAST runs."
-
-**Point to the pipeline stages:** `lint ✅ → test ✅ → sast 🔴 → build (blocked)`
-
-**Say:**
-> "SAST blocks the pipeline. The build stage never runs. The code cannot be merged  
-> in this state. Let's look at what it found."
-
----
-
-## Act 5 — Duo Explains the SAST Finding (3 min)
-
-**What to show:** The Security tab in the MR.
-
-**Navigate to:** MR → Security tab (or scroll to the security widget in the MR overview).
-
-**Point out the finding:**
-```
-DOM-based XSS
-File: js/screens.js
-Rule: javascript.browser.security.dom-based-xss
-Severity: High
-```
-
-**Click "Explain this vulnerability" (GitLab Duo button next to the finding).**
 
 **What Duo explains:**
-- The `innerHTML` sink on line ~500 of `screens.js`  
-- The taint source: `searchTerm` comes from `e.target.value` in the search input
-- The taint path: `e.target.value` → `dispatch(SET_SEARCH)` → `state.searchTerm` → `highlightMatch()` → `innerHTML`
-- Why `highlightMatch` does not sanitize: it escapes regex characters but not HTML characters
-- The impact: any user can inject arbitrary HTML and JavaScript into the page
-- The CWE reference: CWE-79 (Improper Neutralization of Input During Web Page Generation)
-
-**Ask Duo Chat:**
-```
-How do I fix this? Show me the safe version that keeps the
-<mark> highlighting but removes the XSS risk.
-```
+- `highlightMatch()` takes the active search term and wraps matches in `<mark>` tags
+- It builds a `DocumentFragment` using DOM APIs — `createElement`, `textContent`, `appendChild`
+- User data is **never** passed to `innerHTML` — set via `textContent` only, preventing XSS
+- The regex is built from an escaped version of the search term to prevent regex injection
 
 **Say:**
-> "Duo doesn't just flag the problem — it explains the exact taint path from the  
-> user's keyboard to the vulnerable sink, and tells us how to fix it.  
-> This is the difference between a SAST alert that developers ignore  
-> and one that actually gets resolved."
+> "The team built this safely from the start — Duo can confirm that right here.
+> Let's see what the security reports show."
 
 ---
 
-## Act 6 — Apply the Fix (2 min)
+### Step 2 — Compliance & Security Report (Clean) (~1 min)
 
-**What to show:** The corrected code.
+**Navigate to:** Security → Vulnerability Report
 
-**Replace the vulnerable code with the safe version** (apply in Web IDE or locally):
+**Show:** Zero findings. All clear.
+
+**Navigate to:** CI/CD → Pipelines → latest pipeline on `main`
+
+**Show the stage breakdown:**
+```
+lint ✅  →  test ✅  →  security ✅  →  build ✅  →  deploy ✅
+```
+
+**Say:**
+> "Security scanning is enforced — `allow_failure: false` means any vulnerability  
+> would block the pipeline. Right now there's nothing to block. The app is clean,  
+> the pipeline is green, and it's live on staging."
+
+**This is the 'release' baseline. Everything is good. The app is shipped.**
+
+---
+
+## ── PHASE 2: Maintenance ───────────────────────────────────────────────────
+
+### Step 3 — Run the Failing Pipeline (~1 min)
+
+**Navigate to:** Merge Requests → `feature/analytics-integration` MR
+
+**Show the MR description** (see `GITLAB_ISSUE.md` for the issue text).
+
+**Point to the pipeline status on the MR:**
+```
+lint ✅  →  test ✅  →  security 🔴  →  build ░  →  deploy ░
+```
+
+**Say:**
+> "A developer opened this MR during the maintenance cycle — it's meant to add an  
+> analytics integration stub. The pipeline ran automatically when the branch was  
+> pushed. Lint passes, tests pass, but it blocked at the security stage.  
+> Let's find out why."
+
+---
+
+### Step 4 — Pipeline Failed: View the Security Report (~2 min)
+
+**Navigate to:** MR → Security tab  
+OR  
+**Navigate to:** CI/CD → Pipelines → the failed MR pipeline → Security tab
+
+**Show the two findings:**
+
+| Severity | Type | File | Line |
+|----------|------|------|------|
+| 🔴 Critical | Hardcoded GitLab Personal Access Token | `js/config.js` | 86 |
+| 🔴 High | DOM-based XSS — `innerHTML` with user input | `js/screens.js` | 492 |
+
+**Say:**
+> "Two issues caught before this ever touched main. A hardcoded API token — the developer  
+> left their credentials in the source code. And a DOM-based XSS introduced when they  
+> updated the search feature. The pipeline blocked both from shipping."
+
+---
+
+### Step 5 — Ask Duo to Fix It (~3 min)
+
+#### Fix 1 — The XSS in `screens.js`
+
+**Navigate to:** Web IDE → `feature/analytics-integration` → `js/screens.js`
+
+**Select `highlightMatch()` and the feedback block, ask Duo:**
+
+```
+This code has a DOM-based XSS vulnerability. The highlightMatch()
+function returns an HTML string that gets assigned to innerHTML,
+with searchTerm coming directly from user input.
+
+Fix it so the <mark> highlighting still works but user data never
+touches innerHTML.
+```
+
+**Duo's fix — apply in the Web IDE:**
 
 ```js
-// SAFE: build the highlight using DOM APIs — no innerHTML on user data
 function highlightMatch(text, searchTerm) {
-  if (!searchTerm || !searchTerm.trim()) return text;
-
+  if (!searchTerm || !searchTerm.trim()) return document.createTextNode(text);
   const term = searchTerm.trim();
-  const parts = text.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+  const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${safe})`, 'gi'));
   const fragment = document.createDocumentFragment();
-
   for (const part of parts) {
     if (part.toLowerCase() === term.toLowerCase()) {
       const mark = document.createElement('mark');
-      mark.textContent = part;     // textContent — never innerHTML
+      mark.textContent = part;           // user data via textContent — never innerHTML
       fragment.appendChild(mark);
     } else {
       fragment.appendChild(document.createTextNode(part));
     }
   }
-
   return fragment;
 }
 ```
 
+**Also update the usage:**
+
 ```js
-// SAFE: append the DocumentFragment instead of assigning innerHTML
 if (searchTerm.trim()) {
   const feedback = document.createElement('p');
   feedback.className = 'kd-search-feedback';
@@ -212,86 +169,102 @@ if (searchTerm.trim()) {
 }
 ```
 
-**Key change to point out:**
-- `innerHTML = string` → gone
-- `mark.textContent = part` — user data goes through `textContent`, never parsed as HTML
-- `feedback.appendChild(fragment)` — DOM nodes, not HTML strings
+#### Fix 2 — The hardcoded token in `config.js`
 
-**Commit message to use:**
+**Navigate to:** `js/config.js` → remove the hardcoded token:
+
+```js
+// Analytics integration (work in progress — not yet active)
+// Token loaded from environment variable — never hardcode credentials.
+const ANALYTICS_TOKEN = process.env.ANALYTICS_TOKEN || '';
+export const analyticsEnabled = false;
 ```
-fix: replace innerHTML with safe DOM construction in search feedback
 
-highlightMatch() now returns a DocumentFragment built with
-createElement + textContent instead of an HTML string. This
-eliminates the DOM-based XSS vector identified by SAST (CWE-79).
+**Commit with message:**
+```
+fix: replace innerHTML with safe DOM APIs, remove hardcoded token
 
-No behaviour change for the user — <mark> highlighting still works.
+- highlightMatch() now builds a DocumentFragment using textContent,
+  eliminating the DOM-based XSS vector (CWE-79) caught by SAST.
+- Replaced hardcoded ANALYTICS_TOKEN with environment variable reference.
+  Credentials must never be stored in source code.
 ```
 
 ---
 
-## Act 7 — Clean Pipeline → Deploy (1 min)
+### Step 6 — Compliance & Security Report (Clean) (~1 min)
 
-**What to show:** The green pipeline after the fix.
+**After the fix pipeline completes:**
 
-**Navigate to:** Pipelines → the new pipeline triggered by the fix commit.
+**Navigate to:** MR → Security tab  
+**Show:** No new vulnerabilities introduced.
+
+**Navigate to:** CI/CD → Pipelines → latest MR pipeline  
+**Show:**
+```
+lint ✅  →  test ✅  →  security ✅  →  build ✅  →  deploy ✅
+```
 
 **Say:**
-> "We push the fix. The pipeline runs again. This time SAST passes.  
-> All four gates are green. And now the final stage runs — deploy."
+> "Same pipeline, same security gates — this time the code is clean.  
+> The reports show no findings. We're back to the release baseline."
 
-**Point to:** `lint ✅ → test ✅ → sast ✅ → build ✅ → deploy ✅`
+---
 
-**Show the deploy log:**
-```
-🚀 Deploying Kindred to staging environment...
-✅ Deployment complete — app is live at staging.kindred.app
-```
+### Step 7 — Merge the MR (~30 sec)
+
+**Navigate to:** Merge Requests → the open MR
+
+**Show:**
+- Pipeline passed ✅
+- MR Security widget: no new vulnerabilities ✅
+- MR is now mergeable
+
+**Click Merge.**
 
 **Say:**
-> "The feature ships — with the vulnerability removed before it ever reached production.  
-> That's the full loop: Duo helped write the code, Duo explained the risk,  
-> SAST enforced the gate, and Duo guided the fix."
+> "That's the full loop. Release is clean, a maintenance update introduces real issues,  
+> GitLab catches both, Duo fixes both, the security gate clears, and it merges safely.  
+> The code that reaches main is always clean."
 
 ---
 
-## Talking Points (If Questions Come Up)
+## Talking Points
 
-**"Why didn't the Jest tests catch this?"**  
-The test suite covers the Redux-style store (`store.test.js`). DOM rendering in `screens.js` has no tests — a common gap in vanilla JS prototypes. SAST catches what tests can't.
+**"Why did lint and tests pass but security fail?"**  
+The test suite covers the store logic — pure reducer functions. DOM rendering in `screens.js` has no unit tests. And ESLint's `recommended` ruleset doesn't have XSS rules. SAST catches what tests and linting can't: how data flows at runtime.
 
-**"Would this work on a React or Vue project?"**  
-Yes. GitLab SAST uses Semgrep which has rules for `dangerouslySetInnerHTML` in React, `v-html` in Vue, and raw DOM manipulation in plain JS. Same pipeline, same findings.
+**"How did the developer miss the XSS?"**  
+The pattern `element.innerHTML = template_literal` looks completely normal. It's one of the most common mistakes in vanilla JavaScript. The developer was thinking about the feature, not the security model. That's exactly what automated scanning is for.
 
-**"What if Duo's generated code is always safe?"**  
-AI-generated code reflects patterns in its training data, which includes both safe and unsafe patterns. The search-highlight pattern (innerHTML + user input) is one of the most common XSS mistakes in the wild — it appears naturally in Duo's suggestions. SAST is the safety net regardless of source.
+**"What about the token — shouldn't the developer have noticed?"**  
+Secret detection scans the full diff, not just the files you're thinking about. A developer working on an analytics integration might commit config changes alongside UI changes. GitLab catches the token even if it's buried in an unrelated file.
 
-**"Does SAST block the merge?"**  
-With GitLab Ultimate you can configure security policies to require SAST to pass before merging. In this demo the pipeline blocking is the gate — MR cannot be merged while the pipeline is red.
+**"Can the merge be blocked automatically?"**  
+Yes — GitLab Ultimate security policies can require SAST to pass before any MR can be merged, enforced at the group level. No per-project CI config needed.
 
 ---
 
-## Reference: The Taint Flow
+## Reference: XSS Taint Flow (Maintenance branch)
 
 ```
 User types in <input id="discover-search">
-  └─ onInput fires: dispatch({ type: 'SET_SEARCH', term: e.target.value })
-       └─ reducer: SET_SEARCH → state.searchTerm = action.term
-            └─ renderDiscover() destructures: const { searchTerm } = state
+  └─ onInput: dispatch({ type: 'SET_SEARCH', term: e.target.value })
+       └─ reducer: state.searchTerm = action.term
+            └─ renderDiscover() → const { searchTerm } = state
                  └─ highlightMatch(searchTerm, searchTerm)
-                      └─ returns HTML string containing searchTerm
+                      └─ returns HTML string with raw searchTerm
                            └─ feedback.innerHTML = `...${result}`
                                                               ↑
-                                                           XSS SINK
+                                                         XSS SINK (CWE-79)
 ```
 
----
+## Before / After Summary
 
-## Reference: Safe Fix Summary
-
-| Before (vulnerable) | After (safe) |
-|---|---|
-| `highlightMatch` returns an HTML string | Returns a `DocumentFragment` |
-| `feedback.innerHTML = string` | `feedback.appendChild(fragment)` |
-| User data in HTML context | User data via `textContent` only |
-| CWE-79 XSS | No XSS vector |
+| | Release (`main`) | Maintenance MR (before fix) | Maintenance MR (after fix) |
+|---|---|---|---|
+| `highlightMatch` | Returns `DocumentFragment` | Returns HTML string | Returns `DocumentFragment` |
+| User data | Via `textContent` only | Injected into `innerHTML` | Via `textContent` only |
+| Credentials | No secrets in code | Hardcoded token | Environment variable |
+| Security stage | ✅ Passes | 🔴 Blocks | ✅ Passes |
+| Mergeable | ✅ | ✗ | ✅ |

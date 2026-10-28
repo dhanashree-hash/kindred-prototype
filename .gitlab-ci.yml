@@ -5,7 +5,7 @@ include:
 stages:
   - lint
   - test
-  - sast
+  - security
   - build
   - deploy
 
@@ -37,9 +37,20 @@ test:
     - if: $CI_COMMIT_BRANCH == "main"
 
 # ── Stage 3: Security scanning ────────────────────────────────────────────────
-# Two scanners run in the sast stage:
+# Two scanners run in the security stage:
 #   semgrep-sast     — static analysis, catches code-level vulnerabilities
 #   secret_detection — scans for hardcoded credentials, tokens, keys
+#
+# allow_failure: false means the pipeline BLOCKS on any finding.
+# The build and deploy stages will not run until security is clean.
+
+semgrep-sast:
+  stage: security
+  allow_failure: false
+
+secret_detection:
+  stage: security
+  allow_failure: false
 
 # ── Stage 4: Build ────────────────────────────────────────────────────────────
 build:
